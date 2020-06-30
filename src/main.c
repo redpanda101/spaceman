@@ -1,22 +1,23 @@
 #include "main.h"
-#include "spaceman_package.h"
 
 int main(int argc, char** argv)
 {
-	if (argc == 1) 
+	if (argc == 1)
 	{
 		help(GENERAL);
 		return 1;
 	}
-
-#define comp_arg(short_, long_) strcmp(argv[i], short_) == 0 || strcmp(argv[i], long_) == 0 
+	enum LANGUAGE language = C;
+	//Compare arguments
+#define comp_arg(short_, long_) strcmp(argv[i], short_) == 0 || strcmp(argv[i], long_) == 0
 	int _help = 0;
 	for (int i = 1; i < argc; i++)
 	{
-		if(comp_arg("-h", "help")) 
+		if(comp_arg("-h", "help"))
 		{
 			_help = 1;
 		}
+
 		else if(comp_arg("-n", "new"))
 		{
 			if(_help)
@@ -25,18 +26,71 @@ int main(int argc, char** argv)
 				help(NEW);
 			}
 			else
-				new(argv[i+1]);
+			{
+				if (argc < i+1)
+				{
+					puts("Too few arguments");
+					puts("For current directory or a directory that exits please use `init`");
+				}
+				else
+				{
+					spaceman_package *sp = spaceman_package_new(argv[i+1], language);
+					if(sp == NULL)
+						puts("Could not create package!");
+					else
+					{
+						puts("Successfully created package.");
+						free(sp);
+					}
+				}
 		}
 	}
-	if(_help == 1)
+
+	else if (comp_arg("-i", "init"))
+	{
+		if(_help)
+		{
+			_help = 2;
+			help(INIT);
+		}
+		else
+		{
+			spaceman_package *sp;
+			if(argc < i+2)
+			{
+				sp = spaceman_package_init(".", LANGUAGE);
+			}
+			else
+			{
+				sp = spaceman_package_init(argv[i+1], LANGUAGE);
+			}
+
+			if (sp == NULL)
+			{
+				puts("Failed to init package.");
+			}
+			else
+			{
+				//free(sp);
+				puts("Successfully initilised package.");
+			}
+		}
+	}
+
+	else if (comp_arg("cxx", "c++"))
+	{ language = CXX; }
+}
+#undef comp_arg
+
+	if(_help)
 	{
 		help(GENERAL);
 	}
-	return 0;
+		return 0;
 }
 
 
-void help(enum HELP_T help_type) 
+void help(enum HELP_T help_type)
 {
 	switch (help_type){
 		case GENERAL:
@@ -54,11 +108,3 @@ void help(enum HELP_T help_type)
 			help(GENERAL);
 	}
 }
-
-void new(char* name) 
-{
-	printf("Making %s\n", name);
-	spaceman_package* sp = spaceman_package_(name);
-	spaceman_package_create(sp);
-}
-
