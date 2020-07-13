@@ -8,88 +8,85 @@ int main(int argc, char** argv)
 		return 1;
 	}
 	enum LANGUAGE language = C;
+	space_package* (*create)(char* name, enum LANGUAGE l);
+	space_package *sp;
+	enum HELP_T h = GENERAL;
+	char* name;
+
 	//Compare arguments
 #define comp_arg(short_, long_) strcmp(argv[i], short_) == 0 || strcmp(argv[i], long_) == 0
 	int _help = 0;
-	for (int i = 1; i < argc; i++)
-	{
-		if(comp_arg("-h", "help"))
-		{
+	for (int i = 1; i < argc; i++) {
+		//Help
+		if(comp_arg("-h", "help")) {
 			_help = 1;
 		}
-
-		else if(comp_arg("-n", "new"))
-		{
-			if(_help)
-			{
-				_help = 2;
-				help(NEW);
+		
+		//New
+		else if(comp_arg("-n", "new")) {
+			if(_help) {
+				h=NEW;
 			}
-			else
-			{
-				if (argc < i+1)
-				{
+			else {
+				if (argc < i+1) {
 					puts("Too few arguments");
 					puts("For current directory or a directory that exits please use `init`");
 				}
-				else
-				{
-					spaceman_package *sp = spaceman_package_new(argv[i+1], language);
-					if(sp == NULL)
-						puts("Could not create package!");
-					else
-					{
-						puts("Successfully created package.");
-						free(sp);
-					}
+				else {
+					name = argv[i+1];
+					create = space_package_new;
 				}
+			}
 		}
-	}
 
-	else if (comp_arg("-i", "init"))
-	{
-		if(_help)
-		{
+		//Init
+		else if (comp_arg("-i", "init")) {
+		if(_help) {
 			_help = 2;
 			help(INIT);
 		}
-		else
-		{
-			spaceman_package *sp;
+		else {
 			if(argc < i+2)
-			{
-				sp = spaceman_package_init(".", LANGUAGE);
-			}
+				name = ".";
 			else
-			{
-				sp = spaceman_package_init(argv[i+1], LANGUAGE);
-			}
-
-			if (sp == NULL)
-			{
-				puts("Failed to init package.");
-			}
-			else
-			{
-				//free(sp);
-				puts("Successfully initilised package.");
-			}
+				name = argv[i+1];
+			create = space_package_init;
 		}
 	}
 
+	//C++
 	else if (comp_arg("cxx", "c++"))
-	{ language = CXX; }
+		language = CXX;
+
+	//Build
+	else if (comp_arg("-b", "build")) {
+		create = NULL;
+	}
 }
 #undef comp_arg
 
 	if(_help)
-	{
 		help(GENERAL);
-	}
-		return 0;
+	else
+    {
+	    //Create package
+	    if(create == NULL)
+			return 0;
+		else {
+			sp = create(name, language);
+			if(sp == NULL) {
+				puts("Could not create package");
+				return 1;
+			} else
+				puts("Successfully created package");
+		}
+    }
+	return 0;
 }
 
 
+///@brief Help messages
+///@param help_type type of help
 void help(enum HELP_T help_type)
 {
 	switch (help_type){

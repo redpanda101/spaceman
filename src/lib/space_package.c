@@ -1,4 +1,4 @@
-#include "spaceman_package.h"
+#include "space_package.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -11,9 +11,10 @@ const char* language_to_string(enum LANGUAGE language)
   return str[language];
 }
 
-spaceman_package* spaceman_package_new(char* pack_name, enum LANGUAGE language)
+space_package* space_package_new(char* pack_name, enum LANGUAGE language)
 {
-	spaceman_package* p = (spaceman_package *) malloc (sizeof(spaceman_package));
+	space_package* p = (space_package *) malloc (sizeof(space_package));
+	p->source_names = (char**) calloc (1, 100);
 	if(p == NULL)
 		return NULL;
 	//Make dirs
@@ -37,35 +38,39 @@ spaceman_package* spaceman_package_new(char* pack_name, enum LANGUAGE language)
 		mkdir(build, 0700);
 		free(build);
 
-
+		//spaceman.toml
 		char* spac_file_name = (char*) malloc (100);
 
 		sprintf(spac_file_name, "%s/spaceman.toml", pack_name);
 
 		printf("Creating %s\n", spac_file_name);
 
-	  p->spac_file = fopen(spac_file_name, "w+");
+		p->spac_file = fopen(spac_file_name, "w+");
 		free(spac_file_name);
 
 		fputs("#SPACEMAN PACKAGE", p->spac_file);
 		fputs("[details]", p->spac_file);
 		fprintf(p->spac_file, "name = %s\n", pack_name);
 
-		p->files = (FILE**) calloc (2, sizeof(FILE));
-
+		p->sources = (FILE**) calloc (1, sizeof(FILE));
+		
+		//src/main.*
 		char* main_file = (char*) malloc(100);
 
 		sprintf(main_file, "%s/src/main.%s", pack_name, language_to_string(language));
-		p->files[1] = fopen(main_file, "w+");
+		
+		p->sources[0] = fopen(main_file, "w+");
+		p->source_names[0] = main_file;
+
 		free(main_file);
 
-		if(p->files[1] != NULL)
+		if(p->sources[0] != NULL)
 		{
-			fprintf(p->files[1], "//TODO: add licence header\n//Template file created by spaceman\n");
-			fprintf(p->files[1], "#include <stdio.h>\n");
-			fprintf(p->files[1], "int main(void)\n{");
-			fprintf(p->files[1], "	printf(\"Hello World\\n\");\n");
-			fprintf(p->files[1], "}\n");
+			fprintf(p->sources[0], "//TODO: add licence header\n//Template file created by spaceman\n");
+			fprintf(p->sources[0], "\n#include <stdio.h>\n");
+			fprintf(p->sources[0], "int main(void)\n{");
+			fprintf(p->sources[0], "	printf(\"Hello World\\n\");\n");
+			fprintf(p->sources[0], "}\n");
 		}
 		else
 			printf("Could not create %s/src/main.c\n", pack_name);
@@ -76,15 +81,20 @@ spaceman_package* spaceman_package_new(char* pack_name, enum LANGUAGE language)
 	else
 	{
 		free(p);
-		return spaceman_package_init(pack_name, language);
+		return space_package_init(pack_name, language);
 	}
 }
 
-spaceman_package* spaceman_package_init(char* pack_name, enum LANGUAGE language)
+space_package* space_package_init(char* pack_name, enum LANGUAGE language)
 {
-	spaceman_package* p = (spaceman_package *) malloc (sizeof(spaceman_package));
+	space_package* p = (space_package *) malloc (sizeof(space_package));
 	if(p == NULL)
 		return NULL;
+
+	//Variable assignment
+	p->name = pack_name;
+	p->language = language;
+
 	//Make dirs
 	struct stat s = {0};
 	int dir_exists = stat(pack_name, &s);
@@ -122,24 +132,26 @@ spaceman_package* spaceman_package_init(char* pack_name, enum LANGUAGE language)
 
 		char* main_file = (char*) malloc(100);
 
-		p->files = (FILE**) calloc (2, sizeof(FILE));
+		p->sources = (FILE**) calloc (1, sizeof(FILE));
 
 		sprintf(main_file, "%s/src/main.%s", pack_name, language_to_string(language));
-		p->files[1] = fopen(main_file, "w+");
+		p->sources[0] = fopen(main_file, "w+");
 		free(main_file);
 
-		if(p->files[1] != NULL)
+		if(p->sources[0] != NULL)
 		{
-			fprintf(p->files[1], "//TODO: add licence header\n//Template file created by spaceman");
-			fprintf(p->files[1], "#include <stdio.h>\n");
-			fprintf(p->files[1], "int main(void)\n{");
-			fprintf(p->files[1], "	printf(\"Hello World\\n\");\n");
-			fprintf(p->files[1], "}\n");
+			fprintf(p->sources[0], "//TODO: add licence header\n//Template file created by spaceman\n");
+			fprintf(p->sources[0], "#include <stdio.h>\n");
+			fprintf(p->sources[0], "int main(void)\n{");
+			fprintf(p->sources[0], "	printf(\"Hello World\\n\");\n");
+			fprintf(p->sources[0], "}\n");
 		}
+		else
+			printf("Could not create %s/src/main.c\n", pack_name);
 		return p;
 	}
 	else {
 		free(p);
-		return spaceman_package_new(pack_name, LANGUAGE);
+		return space_package_new(pack_name, LANGUAGE);
 	}
 }

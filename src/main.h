@@ -4,7 +4,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include "lib/spaceman_package.h"
+#include "lib/space_package.h"
+#include "lib/build.h"
 
 //Help type
 //Type of help to print ie GENERAL is general help.
